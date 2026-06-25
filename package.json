@@ -1,0 +1,15 @@
+{
+  "name": "fifa-suite-essentials-watch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Watches FIFA World Cup 2026 hospitality for Suite Essentials availability on US/Canada knockout matches and pushes phone alerts via ntfy.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node monitor.js",
+    "dry": "DRY_RUN=1 node monitor.js",
+    "test-alert": "SEND_TEST=1 node monitor.js"
+  }
+}

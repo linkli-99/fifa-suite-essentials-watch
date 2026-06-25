@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS launchd job: runs the watcher every 10 minutes while your Mac is awake.
+
+  Setup:
+    1. Edit the two __PLACEHOLDER__ paths below.
+    2. cp local/com.fifa.suitewatch.plist ~/Library/LaunchAgents/
+    3. launchctl load ~/Library/LaunchAgents/com.fifa.suitewatch.plist
+    4. View logs:  tail -f /tmp/fifa-suitewatch.log
+    To stop:  launchctl unload ~/Library/LaunchAgents/com.fifa.suitewatch.plist
+-->
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.fifa.suitewatch</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>__ABSOLUTE_PATH_TO__/local/run.sh</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>600</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/fifa-suitewatch.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fifa-suitewatch.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+    </dict>
+  </dict>
+</plist>
