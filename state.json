@@ -1,18 +1,9 @@
 {
   "alerts": {
-    "perf:10229203824823": {
-      "firstSeen": "2026-06-26T15:50:16.121Z",
-      "lastAlerted": "2026-06-26T15:50:16.121Z",
-      "lastSeen": "2026-06-26T16:35:14.310Z",
-      "match": "Brazil vs Japan (Round of 32, US)",
-      "stores": [
-        "us"
-      ]
-    },
     "perf:10229203824822": {
       "firstSeen": "2026-06-26T18:25:14.126Z",
       "lastAlerted": "2026-06-26T18:25:14.126Z",
-      "lastSeen": "2026-06-26T22:30:13.668Z",
+      "lastSeen": "2026-06-26T22:35:15.466Z",
       "match": "Germany vs 3ABCDF (Round of 32, US)",
       "stores": [
         "us"
