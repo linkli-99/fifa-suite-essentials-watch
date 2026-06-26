@@ -79,6 +79,15 @@ launchctl load ~/Library/LaunchAgents/com.fifa.suitewatch.plist
 tail -f /tmp/fifa-suitewatch.log
 ```
 
+## 2C. Reliable 5-minute trigger (Cloudflare Worker — optional)
+
+GitHub's `schedule:` cron is best-effort and throttled, so `*/5` actually fires every
+**~80–90 min** under load. For dependable 5-minute polling, deploy the small Cloudflare
+Worker in [`trigger-worker/`](trigger-worker/README.md): a Cloudflare Cron Trigger fires
+on time and calls GitHub's `workflow_dispatch` API to run `watch.yml`. Keep the
+`schedule:` block as a free fallback — the workflow's `concurrency` group makes duplicate
+triggers harmless. Setup is ~5 minutes; see [`trigger-worker/README.md`](trigger-worker/README.md).
+
 ---
 
 ## Commands
