@@ -8,15 +8,6 @@
       "stores": [
         "us"
       ]
-    },
-    "perf:10229203824823": {
-      "firstSeen": "2026-06-27T16:40:14.688Z",
-      "lastAlerted": "2026-06-27T16:40:14.688Z",
-      "lastSeen": "2026-06-27T16:55:15.638Z",
-      "match": "Brazil vs Japan (Round of 32, US)",
-      "stores": [
-        "us"
-      ]
     }
   }
 }
