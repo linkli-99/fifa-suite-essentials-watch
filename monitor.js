@@ -5,7 +5,7 @@
 // ntfy.sh when a watched hospitality product becomes available on a knockout match:
 //   * "Suite Essentials" (id "MEL") on any watched knockout match - alert on any availability.
 //   * "Supporters Club" (id "SC") on the semi-finals + final - alert only when an
-//     available seat category is priced under SC_MAX_USD (default $1200 USD).
+//     available seat category is priced under SC_MAX_USD (default $2000 USD).
 //
 // Design notes:
 //   * One GET per storefront (us, ca) -> ~220 KB JSON. No browser, no auth, no token.
@@ -52,14 +52,14 @@ const STAGE_LABELS = {
 // (`stages: null` = every watched knockout stage).
 //   * maxUsd === null   -> alert on ANY availability (Suite Essentials).
 //   * maxUsd === number -> alert only when an AVAILABLE seat category is priced
-//     strictly under that USD amount (Supporters Club; default <$1200 on R16/QTR/SMF/FNL).
+//     strictly under that USD amount (Supporters Club; default <$2000 on R16/QTR/SMF/FNL).
 const watchProducts = [
   { productId: 'MEL', label: 'Suite Essentials', stages: null, maxUsd: null },
   {
     productId: 'SC',
     label: 'Supporters Club',
     stages: new Set(splitEnv(process.env.SC_STAGES, 'R16,QTR,SMF,FNL')),
-    maxUsd: Number(process.env.SC_MAX_USD || 1200),
+    maxUsd: Number(process.env.SC_MAX_USD || 2000),
   },
 ];
 
