@@ -12,7 +12,7 @@
     "MEL:perf:10229203824825": {
       "firstSeen": "2026-06-28T19:45:13.999Z",
       "lastAlerted": "2026-06-28T19:45:13.999Z",
-      "lastSeen": "2026-06-28T22:01:10.508Z",
+      "lastSeen": "2026-06-28T22:06:08.408Z",
       "match": "Suite Essentials: Côte d'Ivoire vs Norway (Round of 32, US)",
       "stores": [
         "us"
@@ -21,7 +21,7 @@
     "MEL:perf:10229203824842": {
       "firstSeen": "2026-06-28T20:20:14.066Z",
       "lastAlerted": "2026-06-28T20:20:14.066Z",
-      "lastSeen": "2026-06-28T22:01:10.508Z",
+      "lastSeen": "2026-06-28T22:06:08.408Z",
       "match": "Suite Essentials: Belgium vs Senegal (Round of 32, US)",
       "stores": [
         "us"
