@@ -2,7 +2,7 @@
   "name": "fifa-suite-essentials-watch",
   "version": "1.0.0",
   "private": true,
-  "description": "Watches FIFA World Cup 2026 hospitality for Suite Essentials availability on US/Canada knockout matches and pushes phone alerts via ntfy.",
+  "description": "Watches FIFA World Cup 2026 hospitality (Suite Essentials, plus Supporters Club under a price cap on R16/QTR/SMF/FNL) and pushes phone alerts via ntfy.",
   "type": "module",
   "engines": {
     "node": ">=18"

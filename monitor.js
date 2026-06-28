@@ -1,17 +1,20 @@
 #!/usr/bin/env node
-// FIFA World Cup 2026 - Suite Essentials availability watcher.
+// FIFA World Cup 2026 - hospitality availability watcher.
 //
-// Polls the public hospitality JSON API for "Suite Essentials" (product id "MEL")
-// availability on knockout-stage matches hosted in the USA / Canada, and pushes a
-// just-in-time phone alert via ntfy.sh when one becomes available.
+// Polls the public hospitality JSON API and pushes a just-in-time phone alert via
+// ntfy.sh when a watched hospitality product becomes available on a knockout match:
+//   * "Suite Essentials" (id "MEL") on any watched knockout match - alert on any availability.
+//   * "Supporters Club" (id "SC") on the semi-finals + final - alert only when an
+//     available seat category is priced under SC_MAX_USD (default $1200 USD).
 //
 // Design notes:
 //   * One GET per storefront (us, ca) -> ~220 KB JSON. No browser, no auth, no token.
-//   * "Suite Essentials" === the Prices[] entry whose Id === "MEL".
-//     Available when HasAvailableSeats === true (or any PriceCategory IsAvailable).
+//   * A product === the Prices[] entry whose Id matches; its PriceCategories[] carry the
+//     per-seat Amount (host-country currency) and an IsAvailable flag.
 //   * Stage filter uses OriginalStage codes: GST=group (excluded), R32/R16/QTR/SMF/BRZ/FNL.
 //   * Venue filter uses the match CountryCode (US / CA), dropping Mexico matches.
-//   * State (state.json) dedupes alerts and drives the "remind every N hours" cadence.
+//   * SMF/FNL are US-hosted, so Supporters Club Amounts are USD (no FX conversion needed).
+//   * State (state.json) dedupes alerts per match+product and drives the re-alert cadence.
 //
 // Zero dependencies - requires Node 18+ for the global fetch API.
 
@@ -43,6 +46,22 @@ const STAGE_LABELS = {
   BRZ: 'Third-place Final',
   FNL: 'Final',
 };
+
+// Hospitality products to watch. Each match (after stage/storefront filtering) is
+// evaluated against every product whose `stages` includes that match's stage
+// (`stages: null` = every watched knockout stage).
+//   * maxUsd === null   -> alert on ANY availability (Suite Essentials).
+//   * maxUsd === number -> alert only when an AVAILABLE seat category is priced
+//     strictly under that USD amount (Supporters Club; default <$1200 on R16/QTR/SMF/FNL).
+const watchProducts = [
+  { productId: 'MEL', label: 'Suite Essentials', stages: null, maxUsd: null },
+  {
+    productId: 'SC',
+    label: 'Supporters Club',
+    stages: new Set(splitEnv(process.env.SC_STAGES, 'R16,QTR,SMF,FNL')),
+    maxUsd: Number(process.env.SC_MAX_USD || 1200),
+  },
+];
 
 // Per-storefront targeting. A match is only relevant on the site where it can be bought:
 //   * US-hosted matches are sold on the US site  -> watch any US-venue knockout match.
@@ -81,14 +100,47 @@ function localizedText(value) {
   return String(value);
 }
 
-function suiteEssentials(match) {
-  return (match.Prices || []).find((p) => p.Id === 'MEL');
+function productEntry(match, productId) {
+  return (match.Prices || []).find((p) => p.Id === productId);
 }
 
-function isAvailable(priceEntry) {
-  if (!priceEntry) return false;
-  if (priceEntry.HasAvailableSeats === true) return true;
-  return (priceEntry.PriceCategories || []).some((c) => c.IsAvailable === true);
+function usd(n) {
+  return '$' + Number(n).toLocaleString('en-US');
+}
+
+/** Ascending list of numeric Amounts for the given price categories. */
+function sortedAmounts(categories) {
+  return (categories || [])
+    .map((c) => c.Amount)
+    .filter((a) => typeof a === 'number')
+    .sort((a, b) => a - b);
+}
+
+/**
+ * Decide whether a product entry qualifies for an alert. A product may expose any
+ * number of seat categories (Cat 1/2/3/4...); we evaluate them all and return the
+ * full list of qualifying prices, or null when nothing qualifies (incl. not offered).
+ *   * maxUsd == null   -> any availability (HasAvailableSeats, or any IsAvailable category).
+ *   * maxUsd == number -> every AVAILABLE category priced strictly under maxUsd.
+ * Returns { amounts: number[] (ascending), minAmount: number|null }.
+ */
+function qualifyingHit(priceEntry, maxUsd) {
+  if (!priceEntry) return null;
+  const categories = priceEntry.PriceCategories || [];
+  if (maxUsd == null) {
+    const availableCats = categories.filter((c) => c.IsAvailable === true);
+    if (priceEntry.HasAvailableSeats === true || availableCats.length > 0) {
+      const amounts = sortedAmounts(availableCats);
+      return { amounts, minAmount: amounts.length ? amounts[0] : null };
+    }
+    return null;
+  }
+  const under = categories.filter(
+    (c) => c.IsAvailable === true && typeof c.Amount === 'number' && c.Amount < maxUsd,
+  );
+  if (under.length === 0) return null;
+  const amounts = sortedAmounts(under);
+  return { amounts, minAmount: amounts[0] };
 }
 
 async function fetchStorefront(country, attempt = 1) {
@@ -127,45 +179,57 @@ function rawHits(matches, store) {
     if (stage === 'GST') continue; // never group stage
     if (!cfg.stages.has(stage)) continue; // only requested knockout stages
     if (!passesStorefront(m, store)) continue; // storefront-specific venue/country targeting
-    if (!isAvailable(suiteEssentials(m))) continue;
-    out.push({
-      store,
-      performanceId: m.PerformanceId,
-      stage,
-      stageLabel: STAGE_LABELS[stage] || m.Stage || stage,
-      home: localizedText(m.HostTeam?.ExternalName) || localizedText(m.HostTeam?.Code) || 'TBD',
-      away:
-        localizedText(m.OpposingTeam?.ExternalName) || localizedText(m.OpposingTeam?.Code) || 'TBD',
-      venue: localizedText(m.Venue?.Name),
-      country: m.CountryCode,
-      date: (m.StringDate || '').split(' ')[0],
-      time: m.MatchTimeWithTimezone || '',
-    });
+    for (const wp of watchProducts) {
+      if (wp.stages && !wp.stages.has(stage)) continue; // product limited to certain stages
+      const hit = qualifyingHit(productEntry(m, wp.productId), wp.maxUsd);
+      if (!hit) continue;
+      out.push({
+        store,
+        productId: wp.productId,
+        label: wp.label,
+        maxUsd: wp.maxUsd,
+        minAmount: hit.minAmount,
+        amounts: hit.amounts,
+        performanceId: m.PerformanceId,
+        stage,
+        stageLabel: STAGE_LABELS[stage] || m.Stage || stage,
+        home: localizedText(m.HostTeam?.ExternalName) || localizedText(m.HostTeam?.Code) || 'TBD',
+        away:
+          localizedText(m.OpposingTeam?.ExternalName) ||
+          localizedText(m.OpposingTeam?.Code) ||
+          'TBD',
+        venue: localizedText(m.Venue?.Name),
+        country: m.CountryCode,
+        date: (m.StringDate || '').split(' ')[0],
+        time: m.MatchTimeWithTimezone || '',
+      });
+    }
   }
   return out;
 }
 
-function deepLink(store, performanceId) {
-  return `https://fifaworldcup26.hospitality.fifa.com/${store}/en/choose-matches?hospitality=MEL&performanceId=${performanceId}`;
+function deepLink(store, performanceId, productId) {
+  return `https://fifaworldcup26.hospitality.fifa.com/${store}/en/choose-matches?hospitality=${productId}&performanceId=${performanceId}`;
 }
 
-/** Collapse the same match seen on multiple storefronts into one alert listing both. */
+/** Collapse the same match+product seen on multiple storefronts into one alert. */
 function groupByMatch(allHits) {
-  const byId = new Map();
+  const byKey = new Map();
   for (const h of allHits) {
-    const existing = byId.get(h.performanceId);
+    const key = `${h.productId}:perf:${h.performanceId}`;
+    const existing = byKey.get(key);
     if (existing) existing.stores.add(h.store);
-    else byId.set(h.performanceId, { ...h, stores: new Set([h.store]) });
+    else byKey.set(key, { ...h, stores: new Set([h.store]) });
   }
-  return [...byId.values()].map((g) => {
+  return [...byKey.values()].map((g) => {
     const stores = [...g.stores].sort();
     const preferred = stores.includes('us') ? 'us' : stores[0];
     return {
       ...g,
       stores,
-      key: `perf:${g.performanceId}`,
-      link: deepLink(preferred, g.performanceId),
-      links: stores.map((s) => `${s.toUpperCase()}: ${deepLink(s, g.performanceId)}`),
+      key: `${g.productId}:perf:${g.performanceId}`,
+      link: deepLink(preferred, g.performanceId, g.productId),
+      links: stores.map((s) => `${s.toUpperCase()}: ${deepLink(s, g.performanceId, g.productId)}`),
     };
   });
 }
@@ -173,7 +237,18 @@ function groupByMatch(allHits) {
 async function loadState() {
   try {
     const parsed = JSON.parse(await readFile(cfg.stateFile, 'utf8'));
-    return parsed && typeof parsed === 'object' ? parsed : { alerts: {} };
+    const state = parsed && typeof parsed === 'object' ? parsed : { alerts: {} };
+    state.alerts = state.alerts || {};
+    // Migrate legacy keys ("perf:<id>", implicitly Suite Essentials) to the
+    // product-namespaced form ("MEL:perf:<id>") so existing alerts aren't re-fired.
+    for (const k of Object.keys(state.alerts)) {
+      if (k.startsWith('perf:')) {
+        const nk = `MEL:${k}`;
+        if (!state.alerts[nk]) state.alerts[nk] = state.alerts[k];
+        delete state.alerts[k];
+      }
+    }
+    return state;
   } catch {
     return { alerts: {} };
   }
@@ -210,13 +285,24 @@ async function sendNtfy({ title, message, priority, tags, click }) {
 }
 
 async function alertMatch(hit, isReminder) {
-  const title = `Suite Essentials ${isReminder ? '(still available)' : 'AVAILABLE'} - ${hit.stageLabel}`;
+  const cap = hit.maxUsd != null ? ` under ${usd(hit.maxUsd)}` : '';
+  const title = `${hit.label} ${isReminder ? '(still available)' : 'AVAILABLE'}${cap} - ${hit.stageLabel}`;
   const lines = [
     `${hit.home} vs ${hit.away}`,
     `${hit.venue} (${hit.country})`,
     `${hit.date} ${hit.time}`.trim(),
-    `Buy via: ${hit.stores.map((s) => s.toUpperCase()).join(' & ')}`,
   ];
+  if (hit.maxUsd != null) {
+    // Price-capped product (Supporters Club): list every qualifying tier (Cat 1/2/3/4...).
+    if (hit.amounts && hit.amounts.length) {
+      const tiers = hit.amounts.map(usd).join(', ');
+      const n = hit.amounts.length;
+      lines.push(`Under ${usd(hit.maxUsd)}: ${tiers} (${n} categor${n === 1 ? 'y' : 'ies'})`);
+    }
+  } else if (hit.minAmount != null) {
+    lines.push(`From ${usd(hit.minAmount)}`);
+  }
+  lines.push(`Buy via: ${hit.stores.map((s) => s.toUpperCase()).join(' & ')}`);
   if (hit.stores.length > 1) lines.push(...hit.links);
   await sendNtfy({
     title,
@@ -300,13 +386,14 @@ async function main() {
         firstSeen: prev?.firstSeen || new Date(now).toISOString(),
         lastAlerted: new Date(now).toISOString(),
         lastSeen: new Date(now).toISOString(),
-        match: `${hit.home} vs ${hit.away} (${hit.stageLabel}, ${hit.country})`,
+        match: `${hit.label}: ${hit.home} vs ${hit.away} (${hit.stageLabel}, ${hit.country})`,
         stores: hit.stores,
       };
       sent += 1;
       console.log(
-        `ALERT ${isReminder ? '(reminder)' : '(new)'}: ${hit.home} vs ${hit.away} ` +
-          `[${hit.stageLabel}, ${hit.country}] via ${hit.stores.join('+')}`,
+        `ALERT ${isReminder ? '(reminder)' : '(new)'}: ${hit.label} - ${hit.home} vs ${hit.away} ` +
+          `[${hit.stageLabel}, ${hit.country}]${hit.minAmount != null ? ` from ${usd(hit.minAmount)}` : ''} ` +
+          `via ${hit.stores.join('+')}`,
       );
     } catch (err) {
       console.error(`Failed to alert ${hit.key}:`, err instanceof Error ? err.message : err);
@@ -317,7 +404,7 @@ async function main() {
   await saveState(state);
   console.log(
     `[${new Date().toISOString()}] scanned ${scanned} rows across [${cfg.storefronts.join(', ')}] ` +
-      `-> ${hits.length} Suite Essentials hit(s), ${sent} alert(s) sent, tracking ${Object.keys(state.alerts).length}.`,
+      `-> ${hits.length} hit(s), ${sent} alert(s) sent, tracking ${Object.keys(state.alerts).length}.`,
   );
 }
 

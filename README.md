@@ -1,8 +1,13 @@
 # FIFA World Cup 2026 — Suite Essentials Watcher
 
 Polls the FIFA / On Location hospitality API every 5 minutes and sends a **phone
-push alert** the moment a **Suite Essentials** package becomes available for a
-**knockout-stage** match (Round of 32 → Final) hosted in the **USA or Canada**.
+push alert** the moment a watched hospitality package becomes available for a
+**knockout-stage** match (Round of 32 → Final) hosted in the **USA or Canada**:
+
+- **Suite Essentials** — on any watched knockout match; alert on any availability.
+- **Supporters Club** — on the **Round of 16, quarter-finals, semi-finals + final**;
+  alert **only** when an available seat category is priced **under $1,200 USD** (it
+  otherwise runs ~$4k–$17k). The product can expose multiple categories (Cat 1/2/3/4…).
 
 Lightweight by design: one JSON `GET` per storefront (~220 KB), **no browser, no
 login, no dependencies**. Runs in GitHub Actions (cloud, always-on) and/or locally.
@@ -16,6 +21,7 @@ login, no dependencies**. Runs in GitHub Actions (cloud, always-on) and/or local
 | Data source | `GET https://fifaworldcup26.hospitality.fifa.com/next-api/matches-all?productCode=26FWC&productType=5` |
 | US vs Canada | Same endpoint; the storefront is chosen by the **`country-tag: us` / `ca`** request header. Each match is only purchasable on its own site, so targeting is per-site (below). |
 | "Suite Essentials" | The `Prices[]` entry with `Id === "MEL"`. Available when `HasAvailableSeats === true`. |
+| "Supporters Club" | The `Prices[]` entry with `Id === "SC"`, watched on **R16/QTR/SMF/FNL**. Alerts when **any** available `PriceCategories[]` tier (Cat 1/2/3/4…) has `Amount < SC_MAX_USD` (default `1200`, USD; these rounds are US-hosted so no FX). |
 | Stage filter | `OriginalStage`: `GST` (group) excluded; `R32 R16 QTR SMF BRZ FNL` watched. |
 | Location targeting | **US site →** any US-venue knockout match (sold on the US site). **CA site →** **BC Place Vancouver only** (`NN_VAN`); Canadian matches are sold only on the CA site, and Toronto (`NN_TOR`) is excluded. |
 | Alert | `ntfy.sh` push notification with a one-tap deep link to the checkout page. |
@@ -109,6 +115,8 @@ DRY_RUN=1 node monitor.js       # scan + print would-be alerts, send nothing
 | `US_COUNTRIES` | `US` | US site: host-country filter (US venues) |
 | `CA_VENUE_CODES` | `NN_VAN` | CA site: venue allow-list (BC Place only; `NN_TOR`=Toronto) |
 | `REALERT_HOURS` | `6` | Reminder cadence while still available |
+| `SC_STAGES` | `R16,QTR,SMF,FNL` | Stages on which to watch Supporters Club |
+| `SC_MAX_USD` | `1200` | Alert on Supporters Club only when an available tier is strictly under this (USD) |
 
 ---
 
