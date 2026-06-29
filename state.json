@@ -1,14 +1,5 @@
 {
   "alerts": {
-    "MEL:perf:10229203824825": {
-      "firstSeen": "2026-06-28T19:45:13.999Z",
-      "lastAlerted": "2026-06-28T19:45:13.999Z",
-      "lastSeen": "2026-06-28T23:51:08.553Z",
-      "match": "Suite Essentials: Côte d'Ivoire vs Norway (Round of 32, US)",
-      "stores": [
-        "us"
-      ]
-    },
     "MEL:perf:10229203824842": {
       "firstSeen": "2026-06-28T20:20:14.066Z",
       "lastAlerted": "2026-06-29T02:26:08.852Z",
