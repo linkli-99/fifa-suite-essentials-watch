@@ -3,7 +3,7 @@
     "MEL:perf:10229203824846": {
       "firstSeen": "2026-06-30T03:00:25.729Z",
       "lastAlerted": "2026-06-30T21:05:28.568Z",
-      "lastSeen": "2026-06-30T23:45:25.979Z",
+      "lastSeen": "2026-06-30T23:50:27.645Z",
       "match": "Suite Essentials: Australia vs Egypt (Round of 32, US)",
       "stores": [
         "us"
@@ -21,7 +21,7 @@
     "MEL:perf:10229203824842": {
       "firstSeen": "2026-06-30T15:25:27.254Z",
       "lastAlerted": "2026-06-30T21:30:29.250Z",
-      "lastSeen": "2026-06-30T23:45:25.979Z",
+      "lastSeen": "2026-06-30T23:50:27.645Z",
       "match": "Suite Essentials: Belgium vs Senegal (Round of 32, US)",
       "stores": [
         "us"
@@ -30,7 +30,7 @@
     "MEL:perf:10229203824844": {
       "firstSeen": "2026-06-30T23:15:26.267Z",
       "lastAlerted": "2026-06-30T23:15:26.267Z",
-      "lastSeen": "2026-06-30T23:40:27.801Z",
+      "lastSeen": "2026-06-30T23:50:27.645Z",
       "match": "Suite Essentials: Argentina vs Cabo Verde (Round of 32, US)",
       "stores": [
         "us"
