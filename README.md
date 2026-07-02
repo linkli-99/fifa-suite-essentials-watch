@@ -8,6 +8,9 @@ push alert** the moment a watched hospitality package becomes available for a
 - **Supporters Club** — on the **Round of 16, quarter-finals, semi-finals + final**;
   alert **only** when an available seat category is priced **under $2,000 USD** (it
   otherwise runs ~$4k–$17k). The product can expose multiple categories (Cat 1/2/3/4…).
+- **Sharp focus (M94)** — for the match you care about most (**#94 USA vs Belgium,
+  Seattle R16**), alert on **any** hospitality product with an available tier **under
+  $2,000** (configurable via `FOCUS_*`).
 
 Lightweight by design: one JSON `GET` per storefront (~220 KB), **no browser, no
 login, no dependencies**. Runs in GitHub Actions (cloud, always-on) and/or locally.
@@ -22,6 +25,7 @@ login, no dependencies**. Runs in GitHub Actions (cloud, always-on) and/or local
 | US vs Canada | Same endpoint; the storefront is chosen by the **`country-tag: us` / `ca`** request header. Each match is only purchasable on its own site, so targeting is per-site (below). |
 | "Suite Essentials" | The `Prices[]` entry with `Id === "MEL"`. Available when `HasAvailableSeats === true`. |
 | "Supporters Club" | The `Prices[]` entry with `Id === "SC"`, watched on **R16/QTR/SMF/FNL**. Alerts when **any** available `PriceCategories[]` tier (Cat 1/2/3/4…) has `Amount < SC_MAX_USD` (default `2000`, USD; these rounds are US-hosted so no FX). |
+| Sharp focus | `FOCUS_MATCHES` (default `94`): for those match numbers, alert on **any** `Prices[]` product with an available tier under `FOCUS_MAX_USD` (default `2000`) — supersedes the per-product rules and ignores the stage filter. `FOCUS_MIN_SEATS` (default `2`) is a checkout reminder only (the feed carries no seat-count). |
 | Stage filter | `OriginalStage`: `GST` (group) excluded; `R32 R16 QTR SMF BRZ FNL` watched. |
 | Location targeting | **US site →** any US-venue knockout match (sold on the US site). **CA site →** **BC Place Vancouver only** (`NN_VAN`); Canadian matches are sold only on the CA site, and Toronto (`NN_TOR`) is excluded. |
 | Alert | `ntfy.sh` push notification with a one-tap deep link to the checkout page. |
@@ -117,6 +121,9 @@ DRY_RUN=1 node monitor.js       # scan + print would-be alerts, send nothing
 | `REALERT_HOURS` | `6` | Reminder cadence while still available |
 | `SC_STAGES` | `R16,QTR,SMF,FNL` | Stages on which to watch Supporters Club |
 | `SC_MAX_USD` | `2000` | Alert on Supporters Club only when an available tier is strictly under this (USD) |
+| `FOCUS_MATCHES` | `94` | Sharp-focus match numbers: alert on ANY product with an available tier under the focus cap |
+| `FOCUS_MAX_USD` | `2000` | Focus price cap (USD) |
+| `FOCUS_MIN_SEATS` | `2` | Seats you want — checkout reminder only (not filterable; feed has no seat-count) |
 
 ---
 

@@ -4,8 +4,10 @@
 // Polls the public hospitality JSON API and pushes a just-in-time phone alert via
 // ntfy.sh when a watched hospitality product becomes available on a knockout match:
 //   * "Suite Essentials" (id "MEL") on any watched knockout match - alert on any availability.
-//   * "Supporters Club" (id "SC") on the semi-finals + final - alert only when an
-//     available seat category is priced under SC_MAX_USD (default $2000 USD).
+//   * "Supporters Club" (id "SC") on R16/QTR/SMF/FNL - alert only when an available
+//     seat category is priced under SC_MAX_USD (default $2000 USD).
+//   * Sharp focus (FOCUS_MATCHES, default #94) - alert on ANY product with an available
+//     tier under FOCUS_MAX_USD (default $2000); supersedes the per-product rules there.
 //
 // Design notes:
 //   * One GET per storefront (us, ca) -> ~220 KB JSON. No browser, no auth, no token.
@@ -62,6 +64,20 @@ const watchProducts = [
     maxUsd: Number(process.env.SC_MAX_USD || 2000),
   },
 ];
+
+// Sharp-focus matches: specific match numbers where we alert on ANY hospitality product
+// that has an AVAILABLE seat category under FOCUS_MAX_USD (default $2000). This SUPERSEDES
+// the per-product rules above for those matches (it is a superset: any product under the
+// cap, not just Suite Essentials / Supporters Club) and bypasses the stage filter.
+// NOTE: the feed exposes no seat-count, so a quantity requirement (FOCUS_MIN_SEATS seats)
+// cannot be filtered - it is surfaced in the alert as a checkout reminder only.
+const focusMatchNumbers = new Set(
+  splitEnv(process.env.FOCUS_MATCHES, '94')
+    .map((n) => Number(n))
+    .filter((n) => !Number.isNaN(n)),
+);
+const focusMaxUsd = Number(process.env.FOCUS_MAX_USD || 2000);
+const focusMinSeats = Number(process.env.FOCUS_MIN_SEATS || 2);
 
 // Per-storefront targeting. A match is only relevant on the site where it can be bought:
 //   * US-hosted matches are sold on the US site  -> watch any US-venue knockout match.
@@ -177,31 +193,57 @@ function rawHits(matches, store) {
   for (const m of matches) {
     const stage = m.OriginalStage;
     if (stage === 'GST') continue; // never group stage
-    if (!cfg.stages.has(stage)) continue; // only requested knockout stages
     if (!passesStorefront(m, store)) continue; // storefront-specific venue/country targeting
+    const isFocus = focusMatchNumbers.has(Number(m.MatchNumber));
+    if (!isFocus && !cfg.stages.has(stage)) continue; // stage gate (focus matches bypass it)
+
+    const base = {
+      store,
+      performanceId: m.PerformanceId,
+      stage,
+      stageLabel: STAGE_LABELS[stage] || m.Stage || stage,
+      home: localizedText(m.HostTeam?.ExternalName) || localizedText(m.HostTeam?.Code) || 'TBD',
+      away:
+        localizedText(m.OpposingTeam?.ExternalName) ||
+        localizedText(m.OpposingTeam?.Code) ||
+        'TBD',
+      venue: localizedText(m.Venue?.Name),
+      country: m.CountryCode,
+      date: (m.StringDate || '').split(' ')[0],
+      time: m.MatchTimeWithTimezone || '',
+    };
+
+    if (isFocus) {
+      // Sharp focus: alert on ANY product with an available tier under the focus cap.
+      // Supersedes the per-product rules below for this match.
+      for (const p of m.Prices || []) {
+        const hit = qualifyingHit(p, focusMaxUsd);
+        if (!hit) continue;
+        out.push({
+          ...base,
+          productId: p.Id,
+          label: localizedText(p.Name) || p.Id,
+          maxUsd: focusMaxUsd,
+          minAmount: hit.minAmount,
+          amounts: hit.amounts,
+          focus: true,
+        });
+      }
+      continue;
+    }
+
     for (const wp of watchProducts) {
       if (wp.stages && !wp.stages.has(stage)) continue; // product limited to certain stages
       const hit = qualifyingHit(productEntry(m, wp.productId), wp.maxUsd);
       if (!hit) continue;
       out.push({
-        store,
+        ...base,
         productId: wp.productId,
         label: wp.label,
         maxUsd: wp.maxUsd,
         minAmount: hit.minAmount,
         amounts: hit.amounts,
-        performanceId: m.PerformanceId,
-        stage,
-        stageLabel: STAGE_LABELS[stage] || m.Stage || stage,
-        home: localizedText(m.HostTeam?.ExternalName) || localizedText(m.HostTeam?.Code) || 'TBD',
-        away:
-          localizedText(m.OpposingTeam?.ExternalName) ||
-          localizedText(m.OpposingTeam?.Code) ||
-          'TBD',
-        venue: localizedText(m.Venue?.Name),
-        country: m.CountryCode,
-        date: (m.StringDate || '').split(' ')[0],
-        time: m.MatchTimeWithTimezone || '',
+        focus: false,
       });
     }
   }
@@ -286,14 +328,15 @@ async function sendNtfy({ title, message, priority, tags, click }) {
 
 async function alertMatch(hit, isReminder) {
   const cap = hit.maxUsd != null ? ` under ${usd(hit.maxUsd)}` : '';
-  const title = `${hit.label} ${isReminder ? '(still available)' : 'AVAILABLE'}${cap} - ${hit.stageLabel}`;
+  const marker = hit.focus ? 'FOCUS ' : '';
+  const title = `${marker}${hit.label} ${isReminder ? '(still available)' : 'AVAILABLE'}${cap} - ${hit.stageLabel}`;
   const lines = [
     `${hit.home} vs ${hit.away}`,
     `${hit.venue} (${hit.country})`,
     `${hit.date} ${hit.time}`.trim(),
   ];
   if (hit.maxUsd != null) {
-    // Price-capped product (Supporters Club): list every qualifying tier (Cat 1/2/3/4...).
+    // Price-capped: list every qualifying tier (Cat 1/2/3/4...).
     if (hit.amounts && hit.amounts.length) {
       const tiers = hit.amounts.map(usd).join(', ');
       const n = hit.amounts.length;
@@ -302,13 +345,16 @@ async function alertMatch(hit, isReminder) {
   } else if (hit.minAmount != null) {
     lines.push(`From ${usd(hit.minAmount)}`);
   }
+  if (hit.focus && focusMinSeats > 1) {
+    lines.push(`You want ${focusMinSeats} seats - confirm quantity at checkout (not in the feed).`);
+  }
   lines.push(`Buy via: ${hit.stores.map((s) => s.toUpperCase()).join(' & ')}`);
   if (hit.stores.length > 1) lines.push(...hit.links);
   await sendNtfy({
     title,
     message: lines.join('\n'),
-    priority: isReminder ? 4 : 5,
-    tags: ['soccer', 'stadium'],
+    priority: isReminder && !hit.focus ? 4 : 5,
+    tags: hit.focus ? ['star', 'soccer'] : ['soccer', 'stadium'],
     click: hit.link,
   });
 }
@@ -391,7 +437,7 @@ async function main() {
       };
       sent += 1;
       console.log(
-        `ALERT ${isReminder ? '(reminder)' : '(new)'}: ${hit.label} - ${hit.home} vs ${hit.away} ` +
+        `ALERT ${isReminder ? '(reminder)' : '(new)'}: ${hit.focus ? '[FOCUS] ' : ''}${hit.label} - ${hit.home} vs ${hit.away} ` +
           `[${hit.stageLabel}, ${hit.country}]${hit.minAmount != null ? ` from ${usd(hit.minAmount)}` : ''} ` +
           `via ${hit.stores.join('+')}`,
       );
