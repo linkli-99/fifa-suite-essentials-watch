@@ -8,15 +8,6 @@
       "stores": [
         "us"
       ]
-    },
-    "MEL:perf:10229203824845": {
-      "firstSeen": "2026-07-02T17:20:28.521Z",
-      "lastAlerted": "2026-07-02T17:20:28.521Z",
-      "lastSeen": "2026-07-02T18:35:30.951Z",
-      "match": "Suite Essentials: Colombia vs Ghana (Round of 32, US)",
-      "stores": [
-        "us"
-      ]
     }
   }
 }
