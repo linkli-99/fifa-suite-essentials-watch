@@ -1,9 +1,9 @@
-# Reliable 5-minute trigger (Cloudflare Worker)
+# Reliable 2-minute trigger (Cloudflare Worker)
 
-GitHub's own `schedule:` cron is best-effort and heavily throttled — high-frequency
-crons like `*/5` are mostly dropped under load, so the watcher actually fires every
-**~80–90 min** instead of every 5. This Worker fires on time via a **Cloudflare Cron
-Trigger** and calls GitHub's `workflow_dispatch` API to run `watch.yml`.
+GitHub's own `schedule:` cron is best-effort, heavily throttled, and capped at a
+5-minute minimum — high-frequency crons are mostly dropped under load, so the watcher
+actually fires every **~80–90 min**. This Worker fires on time every **2 minutes** via a
+**Cloudflare Cron Trigger** and calls GitHub's `workflow_dispatch` API to run `watch.yml`.
 
 Keep the `schedule:` block in `../.github/workflows/watch.yml` too — it's a free
 fallback, and the workflow's `concurrency` group makes duplicate triggers harmless.
@@ -26,23 +26,23 @@ From this `trigger-worker/` folder:
 npm install                       # installs wrangler locally (or use npx below)
 npx wrangler login                # opens browser; authorize your Cloudflare account
 npx wrangler secret put GH_TOKEN  # paste the PAT from step 1
-npx wrangler deploy               # deploy the Worker + 5-min cron trigger
+npx wrangler deploy               # deploy the Worker + 2-min cron trigger
 ```
 
-That's it — the Worker now dispatches the workflow every 5 minutes.
+That's it — the Worker now dispatches the workflow every 2 minutes.
 
 ## 3. Verify
 ```bash
-npx wrangler tail                 # live logs; you'll see an invocation every 5 min
+npx wrangler tail                 # live logs; you'll see an invocation every 2 min
 ```
 - Health check: open the Worker URL (printed by `deploy`) — it returns
   `suite-watch-trigger: ok` and does **not** trigger a run.
-- Test the cron logic immediately, without waiting 5 min:
+- Test the cron logic immediately, without waiting 2 min:
   ```bash
   npm run test-cron               # then visit the printed http://localhost:8787/__scheduled
   ```
 - Confirm runs in GitHub: **Actions → Suite Essentials Watch** — new runs appear with
-  the `workflow_dispatch` trigger every ~5 min.
+  the `workflow_dispatch` trigger every ~2 min.
 
 ## Configuration
 Repo/owner/workflow/branch live in `wrangler.toml` under `[vars]`. Only `GH_TOKEN`

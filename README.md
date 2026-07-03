@@ -1,6 +1,6 @@
 # FIFA World Cup 2026 — Suite Essentials Watcher
 
-Polls the FIFA / On Location hospitality API every 5 minutes and sends a **phone
+Polls the FIFA / On Location hospitality API every 2 minutes and sends a **phone
 push alert** the moment a watched hospitality package becomes available for a
 **knockout-stage** match (Round of 32 → Final) hosted in the **USA or Canada**:
 
@@ -89,14 +89,14 @@ launchctl load ~/Library/LaunchAgents/com.fifa.suitewatch.plist
 tail -f /tmp/fifa-suitewatch.log
 ```
 
-## 2C. Reliable 5-minute trigger (Cloudflare Worker — optional)
+## 2C. Reliable 2-minute trigger (Cloudflare Worker — optional)
 
-GitHub's `schedule:` cron is best-effort and throttled, so `*/5` actually fires every
-**~80–90 min** under load. For dependable 5-minute polling, deploy the small Cloudflare
-Worker in [`trigger-worker/`](trigger-worker/README.md): a Cloudflare Cron Trigger fires
-on time and calls GitHub's `workflow_dispatch` API to run `watch.yml`. Keep the
-`schedule:` block as a free fallback — the workflow's `concurrency` group makes duplicate
-triggers harmless. Setup is ~5 minutes; see [`trigger-worker/README.md`](trigger-worker/README.md).
+GitHub's `schedule:` cron is best-effort, throttled, and capped at a 5-minute minimum,
+so `*/5` actually fires every **~80–90 min** under load. For dependable 2-minute polling,
+deploy the small Cloudflare Worker in [`trigger-worker/`](trigger-worker/README.md): a
+Cloudflare Cron Trigger fires on time and calls GitHub's `workflow_dispatch` API to run
+`watch.yml`. Keep the `schedule:` block as a free fallback — the workflow's `concurrency`
+group makes duplicate triggers harmless. Setup is ~5 minutes; see [`trigger-worker/README.md`](trigger-worker/README.md).
 
 ---
 
@@ -136,6 +136,7 @@ gh secret set NTFY_TOPIC --repo linkli-99/fifa-suite-essentials-watch   # paste 
 
 ## Disclaimer
 
-For personal, low-volume monitoring of a public endpoint. Be a good citizen: keep the
-polling interval at GitHub's 5-minute floor (the endpoint is CDN-cached, so this is
-negligible load). Buying still happens manually by you on the official site.
+For personal, low-volume monitoring of a public endpoint. Be a good citizen: the default
+2-minute cadence (driven by the Cloudflare Worker) hits a CDN-cached endpoint, so load is
+negligible; don't poll more aggressively than you need. Buying still happens manually by
+you on the official site.

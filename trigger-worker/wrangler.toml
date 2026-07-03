@@ -2,11 +2,11 @@ name = "fifa-suite-watch-trigger"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# Fires every 5 minutes. Cloudflare's cron is far more reliable / on-time than
-# GitHub's own `schedule:` trigger, which is heavily throttled and drops most
-# high-frequency (*/5) runs under load.
+# Fires every 2 minutes. Cloudflare's cron is far more reliable / on-time than
+# GitHub's own `schedule:` trigger, which is heavily throttled (and capped at a
+# 5-minute minimum), dropping most high-frequency runs under load.
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/2 * * * *"]
 
 # Non-secret config, read as `env.*` in src/index.js.
 # The GitHub token is NOT here — it's set separately as a secret:

@@ -1,4 +1,4 @@
-// Cloudflare Worker — reliable 5-minute trigger for the GitHub Actions
+// Cloudflare Worker — reliable 2-minute trigger for the GitHub Actions
 // "Suite Essentials Watch" workflow.
 //
 // Why this exists: GitHub's own `schedule:` (cron) trigger is best-effort and

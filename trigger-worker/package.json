@@ -2,7 +2,7 @@
   "name": "fifa-suite-watch-trigger",
   "version": "1.0.0",
   "private": true,
-  "description": "Cloudflare Worker that triggers the Suite Essentials Watch GitHub Actions workflow on a reliable 5-minute cron.",
+  "description": "Cloudflare Worker that triggers the Suite Essentials Watch GitHub Actions workflow on a reliable 2-minute cron.",
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
