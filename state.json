@@ -2,8 +2,8 @@
   "alerts": {
     "MEL:perf:10229203824833": {
       "firstSeen": "2026-07-04T16:09:08.070Z",
-      "lastAlerted": "2026-07-05T14:19:04.834Z",
-      "lastSeen": "2026-07-05T20:11:05.206Z",
+      "lastAlerted": "2026-07-05T22:42:32.108Z",
+      "lastSeen": "2026-07-05T22:42:32.108Z",
       "match": "Suite Essentials: Argentina vs Egypt (Round of 16, US)",
       "stores": [
         "us"
