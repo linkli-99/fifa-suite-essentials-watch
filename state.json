@@ -3,7 +3,7 @@
     "MEL:perf:10229203824834": {
       "firstSeen": "2026-07-06T14:40:35.836Z",
       "lastAlerted": "2026-07-07T14:46:36.382Z",
-      "lastSeen": "2026-07-07T20:30:35.828Z",
+      "lastSeen": "2026-07-07T20:32:34.563Z",
       "match": "Suite Essentials: France vs Morocco (Quarter-final, US)",
       "stores": [
         "us"
@@ -30,7 +30,7 @@
     "MEL:perf:10229203824836": {
       "firstSeen": "2026-07-07T18:54:35.988Z",
       "lastAlerted": "2026-07-07T18:54:35.988Z",
-      "lastSeen": "2026-07-07T20:16:32.777Z",
+      "lastSeen": "2026-07-07T20:32:34.563Z",
       "match": "Suite Essentials: Norway vs England (Quarter-final, US)",
       "stores": [
         "us"
@@ -39,7 +39,7 @@
     "MEL:perf:10229203824838": {
       "firstSeen": "2026-07-07T19:32:34.915Z",
       "lastAlerted": "2026-07-07T19:32:34.915Z",
-      "lastSeen": "2026-07-07T19:50:32.955Z",
+      "lastSeen": "2026-07-07T20:32:34.563Z",
       "match": "Suite Essentials: W97 vs W98 (Semi-final, US)",
       "stores": [
         "us"
