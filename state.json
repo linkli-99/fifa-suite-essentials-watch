@@ -12,7 +12,7 @@
     "MEL:perf:10229203824837": {
       "firstSeen": "2026-07-07T16:18:34.194Z",
       "lastAlerted": "2026-07-09T17:36:47.188Z",
-      "lastSeen": "2026-07-09T18:06:47.204Z",
+      "lastSeen": "2026-07-09T18:08:46.512Z",
       "match": "Suite Essentials: Argentina vs Switzerland (Quarter-final, US)",
       "stores": [
         "us"
@@ -30,7 +30,7 @@
     "MEL:perf:10229203824839": {
       "firstSeen": "2026-07-09T13:58:27.493Z",
       "lastAlerted": "2026-07-09T13:58:27.493Z",
-      "lastSeen": "2026-07-09T18:06:47.204Z",
+      "lastSeen": "2026-07-09T18:08:46.512Z",
       "match": "Suite Essentials: W99 vs W100 (Semi-final, US)",
       "stores": [
         "us"
@@ -48,7 +48,7 @@
     "MEL:perf:10229203824838": {
       "firstSeen": "2026-07-09T17:26:48.076Z",
       "lastAlerted": "2026-07-09T17:26:48.076Z",
-      "lastSeen": "2026-07-09T18:06:47.204Z",
+      "lastSeen": "2026-07-09T18:08:46.512Z",
       "match": "Suite Essentials: W97 vs W98 (Semi-final, US)",
       "stores": [
         "us"
