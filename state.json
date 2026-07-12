@@ -3,7 +3,7 @@
     "MEL:perf:10229203824838": {
       "firstSeen": "2026-07-09T17:26:48.076Z",
       "lastAlerted": "2026-07-12T17:50:52.054Z",
-      "lastSeen": "2026-07-12T21:08:52.732Z",
+      "lastSeen": "2026-07-12T21:10:52.844Z",
       "match": "Suite Essentials: France vs Spain (Semi-final, US)",
       "stores": [
         "us"
@@ -12,7 +12,7 @@
     "MEL:perf:10229203824839": {
       "firstSeen": "2026-07-12T16:08:53.131Z",
       "lastAlerted": "2026-07-12T16:08:53.131Z",
-      "lastSeen": "2026-07-12T21:08:52.732Z",
+      "lastSeen": "2026-07-12T21:10:52.844Z",
       "match": "Suite Essentials: England vs Argentina (Semi-final, US)",
       "stores": [
         "us"
