@@ -11,8 +11,8 @@
     },
     "MEL:perf:10229203824838": {
       "firstSeen": "2026-07-13T12:08:53.541Z",
-      "lastAlerted": "2026-07-14T00:11:06.156Z",
-      "lastSeen": "2026-07-14T06:11:06.068Z",
+      "lastAlerted": "2026-07-14T06:13:07.257Z",
+      "lastSeen": "2026-07-14T06:13:07.257Z",
       "match": "Suite Essentials: France vs Spain (Semi-final, US)",
       "stores": [
         "us"
