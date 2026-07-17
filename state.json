@@ -2,8 +2,8 @@
   "alerts": {
     "MEL:perf:10229203824840": {
       "firstSeen": "2026-07-14T21:51:05.961Z",
-      "lastAlerted": "2026-07-17T16:24:23.612Z",
-      "lastSeen": "2026-07-17T22:16:23.849Z",
+      "lastAlerted": "2026-07-17T22:25:46.641Z",
+      "lastSeen": "2026-07-17T22:25:46.641Z",
       "match": "Suite Essentials: France vs England (Third-place Final, US)",
       "stores": [
         "us"
